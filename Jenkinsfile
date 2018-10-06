@@ -29,27 +29,17 @@ pipeline {
 
           dir ('./charts/preview') {
            container('maven') {
-             sh "make OKTA_CLIENT_TOKEN=\$OKTA_CLIENT_TOKEN preview"
+             sh "make preview"
              sh "jx preview --app $APP_NAME --dir ../.."
            }
           }
         }
-        steps {
-         container('maven') {
-           dir ('./holdings-api') {
-             sh "mvn versions:set -DnewVersion=$PREVIEW_VERSION"
-             sh "mvn install -Pprod"
-           }
-         }
       }
       stage('Build Release') {
         when {
           branch 'master'
         }
         steps {
-          dir ('./holdings-api') {
-            sh "mvn versions:set -DnewVersion=\$(cat ../VERSION)"
-          }
           container('maven') {
             // ensure we're not on a detached head
             sh "git checkout master"
@@ -72,9 +62,6 @@ pipeline {
 
 
             sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
-          }
-          dir ('./holdings-api') {
-            sh "mvn clean deploy -Pprod"
           }
         }
       }
